@@ -1,0 +1,19 @@
+---
+- name: service | touch log file
+  file: >
+    path={{ heka_log_file }} state=touch
+    owner={{ heka_user }} group={{ heka_group }} mode=775
+  changed_when: False
+
+- name: service | render hekad config
+  template: >
+    src=hekad.toml dest={{ heka_config_dir }}/00-system.toml
+    owner={{ heka_user }} group={{ heka_group }} mode=775
+  notify: restart hekad
+
+- name: service | render upstart service config
+  template: src=upstart.conf dest=/etc/init/hekad.conf mode=0755
+  notify: restart hekad
+
+- name: service | enable service
+  service: name=hekad enabled=yes state=started

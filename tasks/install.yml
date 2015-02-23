@@ -1,0 +1,44 @@
+---
+- name: install | download debian package
+  get_url: url={{ heka_download_url }} dest=/tmp/heka.deb sha256sum={{ heka_sha256sum }}
+  register: heka_download_result
+
+- name: install | install debian package
+  command: dpkg -i /tmp/heka.deb
+  when: heka_download_result.changed
+
+- name: install | create group
+  group: name={{ heka_group }}
+
+- name: install | create user
+  user: >
+    comment="hekad service user"
+    name={{ heka_user }}
+    createhome=no
+    home={{ heka_home_dir }}
+    system=yes
+    shell=/bin/false
+
+- name: install | create config dir
+  file: >
+    path={{ heka_config_dir }} state=directory
+    owner={{ heka_user }} group={{ heka_group }} mode=775
+
+- name: install | create home
+  file: >
+    path={{ heka_home_dir }} state=directory
+    owner={{ heka_user }} group={{ heka_group }} mode=775
+
+- name: install | copy filters
+  copy: >
+    src={{ item }} dest={{ heka_filters_dir }}
+    owner={{ heka_user }} group={{ heka_group }} mode=775
+  with_fileglob:
+    - 'filters/*.lua'
+
+- name: install | copy decoders
+  copy: >
+    src={{ item }} dest={{ heka_decoders_dir }}
+    owner={{ heka_user }} group={{ heka_group }} mode=775
+  with_fileglob:
+    - 'decoders/*.lua'

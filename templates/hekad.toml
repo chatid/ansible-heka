@@ -1,0 +1,143 @@
+#
+# heka config
+#
+[hekad]
+maxprocs = {{ ansible_processor_vcpus }}
+
+{% if heka_monitor_disk | bool %}
+#
+# Disk Stats
+#
+[diskstats_decoder]
+type = "SandboxDecoder"
+filename = "lua_decoders/linux_diskstats.lua"
+
+{% for device in ansible_devices %}
+[diskstats_{{ device }}_input]
+type = "FilePollingInput"
+ticker_interval = 1
+file_path = "/sys/block/{{ device }}/stat"
+decoder = "diskstats_decoder"
+
+[diskstats_{{ device }}_filter]
+type = "SandboxFilter"
+filename = "lua_filters/diskstats.lua"
+ticker_interval = 1
+preserve_data = true
+message_matcher = "Logger == 'diskstats_{{ device }}_input'"
+{% endfor %}
+
+#
+# Disk Usage
+#
+[disk_usage_decoder]
+type = "SandboxDecoder"
+filename = "lua_decoders/linux_diskusage.lua"
+
+[disk_usage_input]
+type = "ProcessInput"
+ticker_interval = 1
+decoder = "disk_usage_decoder"
+
+    [disk_usage_input.command.0]
+    bin = "/bin/df"
+    args = ["-Tk"]
+
+    [disk_usage_input.command.1]
+    bin = "/usr/bin/tail"
+    args = ["-n", "+2"]
+
+{% for mount in ansible_mounts %}
+[disk_usage_{{ mount.device | replace('/dev/', '') }}]
+type = "SandboxFilter"
+filename = "lua_filters/diskusage.lua"
+ticker_interval = 1
+preserve_data = true
+message_matcher = "Type == 'stats.diskusage' && Fields[DiskDevice] == '{{ mount.device }}'"
+{% endfor %}
+{% endif %}
+
+{% if heka_monitor_cpu %}
+#
+# Load Average
+#
+[loadavg_decoder]
+type = "SandboxDecoder"
+filename = "lua_decoders/linux_loadavg.lua"
+
+[loadavg_input]
+type = "FilePollingInput"
+ticker_interval = 1
+file_path = "/proc/loadavg"
+decoder = "loadavg_decoder"
+
+[loadavg]
+type = "SandboxFilter"
+filename = "lua_filters/loadavg.lua"
+ticker_interval = 1
+preserve_data = true
+message_matcher = "Type == 'stats.loadavg'"
+{% endif %}
+
+{% if heka_monitor_memory | bool %}
+#
+# Memory Stats
+#
+[memory_stats_decoder]
+type = "SandboxDecoder"
+filename = "lua_decoders/linux_memstats.lua"
+
+[memory_stats_input]
+type = "FilePollingInput"
+ticker_interval = 1
+file_path = "/proc/meminfo"
+decoder = "memory_stats_decoder"
+
+[memory_stats]
+type = "SandboxFilter"
+filename = "lua_filters/memstats.lua"
+ticker_interval = 1
+preserve_data = true
+message_matcher = "Type == 'stats.memstats'"
+{% endif %}
+
+{% if heka_monitor_network | bool %}
+#
+# Network Stats
+#
+[net_stats_decoder]
+type = "SandboxDecoder"
+filename = "lua_decoders/linux_netstats.lua"
+
+[net_stats_input]
+type = "ProcessInput"
+ticker_interval = 1
+decoder = "net_stats_decoder"
+
+    [net_stats_input.command.0]
+    bin = "/bin/cat"
+    args = ["/proc/net/dev"]
+
+    [net_stats_input.command.1]
+    bin = "/usr/bin/tail"
+    args = ["-n", "+3"]
+{% endif %}
+
+#
+# Outputs
+#
+{% if heka_debug | bool %}
+[rst_encoder]
+type = "RstEncoder"
+
+[heka_debug_output]
+type = "LogOutput"
+encoder = "rst_encoder"
+message_matcher = "TRUE"
+{% endif %}
+
+{% if heka_dashboard_enabled | bool %}
+[dashboard]
+type = "DashboardOutput"
+ticker_interval = 1
+{% endif %}

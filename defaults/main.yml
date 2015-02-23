@@ -1,0 +1,20 @@
+---
+# defaults file for chatid.heka
+heka_version: 0.8.3
+heka_user: hekad
+heka_group: hekad
+heka_download_url: https://github.com/mozilla-services/heka/releases/download/v{{ heka_version }}/heka_{{ heka_version }}_amd64.deb
+heka_sha256sum: db01f18c9b051fb6329275d23f2ce139376c811b854a7a5f80ef64a6527a17d4
+heka_home_dir: /var/cache/hekad
+heka_bin: /usr/bin/hekad
+heka_config_dir: /etc/hekad/conf.d
+heka_log_file: /var/log/hekad
+heka_shared_dir: /usr/share/heka
+heka_filters_dir: "{{ heka_shared_dir }}/lua_filters"
+heka_decoders_dir: "{{ heka_shared_dir }}/lua_decoders"
+heka_dashboard_enabled: yes
+heka_monitor_disk: no
+heka_monitor_cpu: no
+heka_monitor_memory: no
+heka_monitor_network: no
+heka_debug: no
