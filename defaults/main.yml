@@ -1,10 +1,10 @@
 ---
 # defaults file for chatid.heka
-heka_version: 0.8.3
+heka_version: 0.9.2
 heka_user: hekad
 heka_group: hekad
 heka_download_url: https://github.com/mozilla-services/heka/releases/download/v{{ heka_version }}/heka_{{ heka_version }}_amd64.deb
-heka_sha256sum: db01f18c9b051fb6329275d23f2ce139376c811b854a7a5f80ef64a6527a17d4
+heka_sha256sum: e38b223f46aed80276635fa271d9b3a03fa8577f9aeffddea612ad150c614a15
 heka_home_dir: /var/cache/hekad
 heka_bin: /usr/bin/hekad
 heka_config_dir: /etc/hekad/conf.d
