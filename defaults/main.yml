@@ -18,3 +18,4 @@ heka_monitor_cpu: no
 heka_monitor_memory: no
 heka_monitor_network: no
 heka_debug: no
+heka_auto_upgrade: no

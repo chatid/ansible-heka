@@ -1,6 +1,8 @@
 ---
 - name: install | download debian package
-  get_url: url={{ heka_download_url }} dest=/tmp/heka.deb sha256sum={{ heka_sha256sum }}
+  get_url: >
+    url={{ heka_download_url }} dest=/tmp/heka.deb sha256sum={{ heka_sha256sum }}
+    force={{ 'yes' if heka_auto_upgrade|bool else 'no' }}
   register: heka_download_result
 
 - name: install | install debian package
