@@ -15,45 +15,17 @@ filename = "lua_decoders/linux_diskstats.lua"
 {% for device in ansible_devices %}
 [diskstats-{{ device }}-input]
 type = "FilePollingInput"
-ticker_interval = 1
+ticker_interval = {{ heka_diskstats_interval }}
 file_path = "/sys/block/{{ device }}/stat"
 decoder = "diskstats-decoder"
 
 [diskstats-{{ device }}-filter]
 type = "SandboxFilter"
 filename = "lua_filters/diskstats.lua"
-ticker_interval = 1
+ticker_interval = {{ heka_diskstats_interval }}
 preserve_data = true
-message_matcher = "Logger == 'diskstats_{{ device }}_input'"
-{% endfor %}
+message_matcher = "Logger == 'diskstats-{{ device }}-input'"
 
-#
-# Disk Usage
-#
-[disk-usage-decoder]
-type = "SandboxDecoder"
-filename = "lua_decoders/linux_diskusage.lua"
-
-[disk-usage-input]
-type = "ProcessInput"
-ticker_interval = 1
-decoder = "disk_usage_decoder"
-
-    [disk-usage-input.command.0]
-    bin = "/bin/df"
-    args = ["-Tk"]
-
-    [disk-usage-input.command.1]
-    bin = "/usr/bin/tail"
-    args = ["-n", "+2"]
-
-{% for mount in ansible_mounts %}
-[disk-usage-{{ mount.device | replace('/dev/', '') }}]
-type = "SandboxFilter"
-filename = "lua_filters/diskusage.lua"
-ticker_interval = 1
-preserve_data = true
-message_matcher = "Type == 'stats.diskusage' && Fields[DiskDevice] == '{{ mount.device }}'"
 {% endfor %}
 {% endif %}
 
@@ -67,16 +39,41 @@ filename = "lua_decoders/linux_loadavg.lua"
 
 [loadavg-input]
 type = "FilePollingInput"
-ticker_interval = 1
+ticker_interval = {{ heka_cpustats_interval }}
 file_path = "/proc/loadavg"
 decoder = "loadavg-decoder"
 
 [loadavg]
 type = "SandboxFilter"
 filename = "lua_filters/loadavg.lua"
-ticker_interval = 1
+ticker_interval = {{ heka_cpustats_interval }}
 preserve_data = true
 message_matcher = "Type == 'stats.loadavg'"
+
+#
+# Proc stats
+#
+[procstats-decoder]
+type = "SandboxDecoder"
+filename = "lua_decoders/linux_procstat.lua"
+
+[procstats-input]
+type = "FilePollingInput"
+ticker_interval = {{ heka_cpustats_interval }}
+file_path = "/proc/stat"
+decoder = "procstats-decoder"
+
+[procstats]
+type = "SandboxFilter"
+filename = "lua_filters/procstat.lua"
+preserve_data = true
+message_matcher = "Type == 'stats.procstat'"
+ticker_interval = {{ heka_cpustats_interval }}
+
+[procstats.config]
+    whitelist = "cpu$"
+    extras = false
+    percent_integer = true
 {% endif %}
 
 {% if heka_monitor_memory | bool %}
@@ -89,38 +86,16 @@ filename = "lua_decoders/linux_memstats.lua"
 
 [memory-stats-input]
 type = "FilePollingInput"
-ticker_interval = 1
+ticker_interval = {{ heka_memorystats_interval }}
 file_path = "/proc/meminfo"
 decoder = "memory-stats-decoder"
 
 [memory-stats]
 type = "SandboxFilter"
 filename = "lua_filters/memstats.lua"
-ticker_interval = 1
+ticker_interval = {{ heka_memorystats_interval }}
 preserve_data = true
 message_matcher = "Type == 'stats.memstats'"
-{% endif %}
-
-{% if heka_monitor_network | bool %}
-#
-# Network Stats
-#
-[net-stats-decoder]
-type = "SandboxDecoder"
-filename = "lua_decoders/linux_netstats.lua"
-
-[net-stats-input]
-type = "ProcessInput"
-ticker_interval = 1
-decoder = "net-stats-decoder"
-
-    [net-stats-input.command.0]
-    bin = "/bin/cat"
-    args = ["/proc/net/dev"]
-
-    [net-stats-input.command.1]
-    bin = "/usr/bin/tail"
-    args = ["-n", "+3"]
 {% endif %}
 
 #
@@ -139,5 +114,6 @@ message_matcher = "TRUE"
 {% if heka_dashboard_enabled | bool %}
 [dashboard]
 type = "DashboardOutput"
-ticker_interval = 1
+ticker_interval = {{ heka_dashboard_interval }}
+address = "{{ heka_dashboard_address }}"
 {% endif %}

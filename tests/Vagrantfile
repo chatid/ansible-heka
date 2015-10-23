@@ -12,6 +12,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # Every Vagrant virtual environment requires a box to build off of.
   config.vm.box = "phusion/ubuntu-14.04-amd64"
 
+  config.vm.network "private_network", type: "dhcp"
+
   config.vm.define 'machine1' do |machine|
     machine.vm.hostname = 'machine1'
   end

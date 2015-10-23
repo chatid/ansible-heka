@@ -1,7 +1,21 @@
 ---
-# tasks file for chatid.heka
-- include: install.yml
-  tags: [install]
+- name: download debian package
+  get_url:
+    url: "{{ heka_download_url }} "
+    dest: /tmp/heka.deb
+    sha256sum: "{{ heka_sha256sum }}"
+    force: "{{ heka_auto_upgrade }}"
+  register: heka_download_result
 
-- include: service.yml
-  tags: [service]
+- name: install debian package
+  command: dpkg -i /tmp/heka.deb
+  when: heka_download_result.changed
+
+- name: render system heka config
+  template:
+    src: hekad.toml
+    dest: /etc/heka/conf.d/00-hekad.toml
+    owner: heka
+    group: heka
+    mode: 775
+  notify: restart heka

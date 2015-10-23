@@ -1,4 +1,4 @@
 ---
 # handlers file for chatid.heka
-- name: restart hekad
-  service: name=hekad state=restarted
+- name: restart heka
+  service: name=heka state=restarted
