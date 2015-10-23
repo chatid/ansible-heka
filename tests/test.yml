@@ -1,5 +1,5 @@
 - hosts: all
-  sudo: True
+  sudo: yes
 
   roles:
-    - role: 'chatid.heka'
+    - role: "{{ role_name }}"

@@ -22,5 +22,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.provision "ansible" do |ansible|
     ansible.verbose = true
     ansible.playbook = "test.yml"
+    ansible.extra_vars = {
+      role_name: Dir.pwd.split('/')[-2]
+    }
   end
 end
